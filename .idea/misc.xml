@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Users/noahe/StudioProjects/Blessed_Android_BLE_Test/app/src/main/res/drawable/ic_add_white_24dp.xml" value="0.3828125" />
+        <entry key="..\:/Users/noahe/StudioProjects/Blessed_Android_BLE_Test/app/src/main/res/layout/activity_main.xml" value="0.33" />
+        <entry key="..\:/Users/noahe/StudioProjects/Blessed_Android_BLE_Test/app/src/main/res/layout/fragment_control_screen.xml" value="0.29383116883116883" />
+        <entry key="..\:/Users/noahe/StudioProjects/Blessed_Android_BLE_Test/app/src/main/res/layout/fragment_settings_screen.xml" value="0.2916666666666667" />
+        <entry key="..\:/Users/noahe/StudioProjects/Blessed_Android_BLE_Test/app/src/main/res/layout/fragment_stack_progress.xml" value="0.36666666666666664" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
