@@ -76,6 +76,7 @@ class SettingsScreenFragment : Fragment() {
         )
 
         // Checkbox setup
+        sharedViewModel.setReturnToStartPosition(true)
         view.findViewById<CheckBox>(R.id.returnToStartPosition_CheckBox).setOnClickListener { v ->
             if (v is CheckBox) {
                 sharedViewModel.setReturnToStartPosition(v.isChecked)
