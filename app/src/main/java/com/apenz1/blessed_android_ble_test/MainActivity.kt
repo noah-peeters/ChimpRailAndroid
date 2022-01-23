@@ -28,8 +28,12 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.leinardi.android.speeddial.FabWithLabelView
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
+import com.apenz1.blessed_android_ble_test.BleQueue
 import kotlin.math.ceil
-import java.util.UUID
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGatt
+import java.util.*
 
 
 private const val ENABLE_BLUETOOTH_REQUEST_CODE = 1
@@ -46,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var bluetoothToggleButton: FabWithLabelView
     private lateinit var progressBar: ProgressBar
+    private lateinit var bluetoothQueue: BleQueue
 
     private val sharedViewModel: SharedViewModel by viewModels()
 
@@ -180,14 +185,12 @@ class MainActivity : AppCompatActivity() {
                     if (sharedViewModel.operationMode.value == "Start to end") {
                         // TODO: Use Start/end positions
                     } else if (sharedViewModel.operationMode.value == "Distance") {
-                        // TODO: Allow change of distance
                         var totalDistance = sharedViewModel.totalDistance.value
                         if (totalDistance != null) {
                             numberOfStepsToTake =
                                 ceil(totalDistance.toDouble() / stepSize!!).toInt()
                         }
                     }
-
 
                     // Send processed stack instructions to device
                     writeMessageToPeripheral(
@@ -306,9 +309,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
         characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-
         characteristic.value = msg.toByteArray(Charsets.UTF_8)
-        gatt.writeCharacteristic(characteristic)
+        bluetoothQueue.writeCharacteristic(characteristic)
+        //gatt.writeCharacteristic(characteristic)
     }
 
     private fun bleEndLifecycle() {
@@ -497,7 +500,10 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
+            // Get gatt + setup BluetoothQueue
             connectedGatt = gatt
+            bluetoothQueue = BleQueue(connectedGatt!!)
+
             characteristicForRead = service.getCharacteristic(UUID.fromString(CHAR_FOR_READ_UUID))
             characteristicForStepMovementWrite =
                 service.getCharacteristic(UUID.fromString(STEP_MOVEMENT_WRITE_UUID))

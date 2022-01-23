@@ -51,7 +51,6 @@ class ControlScreenFragment : Fragment() {
             directionCode = "BCK"
         }
         var stepSize: Int? = sharedViewModel.stepSize.value
-        Log.d("MESSAGE", stepSize.toString())
 
         if (directionCode != null && stepSize != null) {
             sharedViewModel.setStepMovementCommand(directionCode + stepSize.toString())
@@ -59,11 +58,10 @@ class ControlScreenFragment : Fragment() {
     }
 
     // Touch listener for continuous movement buttons. Updates values in SharedModelView
+    // TODO: Doesn't call "stop" on very short click
     private val onContinuousMovementButtonsTouch =
         View.OnTouchListener { view: View, motionEvent: MotionEvent ->
             Boolean
-            // Required code
-            view.performClick()
 
             // Boolean to send (default is stop)
             var booleanToSend = when (motionEvent.action) {
@@ -90,6 +88,9 @@ class ControlScreenFragment : Fragment() {
                     sharedViewModel.setContinuousMovementCommand("BCK$booleanToSend")
                 }
             }
+
+            // Required code
+            view.performClick()
             return@OnTouchListener true
         }
 
