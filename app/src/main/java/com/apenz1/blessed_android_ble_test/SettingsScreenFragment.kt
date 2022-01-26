@@ -47,13 +47,13 @@ class SettingsScreenFragment : Fragment() {
         setupEditText(
             preShutterEditText,
             view.findViewById(R.id.preShutterWaitTime_InputLayout),
-            0,
+            1,
             120
         )
         setupEditText(
             postShutterEditText,
             view.findViewById(R.id.postShutterWaitTime_InputLayout),
-            0,
+            1,
             120
         )
         setupEditText(

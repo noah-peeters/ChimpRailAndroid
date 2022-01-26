@@ -46,6 +46,7 @@ private const val CONTINUOUS_MOVEMENT_WRITE_UUID = "28c74a57-67cb-4b43-8adf-8776
 private const val CHAR_FOR_INDICATE_UUID = "d2f362f4-6542-4b13-be5e-8c81d423a347"
 private const val CCC_DESCRIPTOR_UUID = "c14b46e2-553a-4664-98b0-653494882964"
 
+// TODO: Bluetooth gets disconnected on application tilt (MainActivity recreated??)
 class MainActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var bluetoothToggleButton: FabWithLabelView
@@ -193,7 +194,6 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     val msgToWrite="PRE$preShutterWaitTime;PST$postShutterWaitTime;STP$shuttersPerStep;STS$stepSize;DIR$movementDirection;NST$numberOfStepsToTake;RTS$returnToStartPosition"
-
                     Log.d("MSGToSend",msgToWrite)
                     // Send processed stack instructions to device
                     writeMessageToPeripheral(
