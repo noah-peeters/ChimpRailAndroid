@@ -192,9 +192,12 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    val msgToWrite="PRE$preShutterWaitTime;PST$postShutterWaitTime;STP$shuttersPerStep;STS$stepSize;DIR$movementDirection;NST$numberOfStepsToTake;RTS$returnToStartPosition"
+
+                    Log.d("MSGToSend",msgToWrite)
                     // Send processed stack instructions to device
                     writeMessageToPeripheral(
-                        "PRE$preShutterWaitTime;PST$postShutterWaitTime;STP$shuttersPerStep;STS$stepSize;DIR$movementDirection;NST$numberOfStepsToTake;RTS$returnToStartPosition",
+                        msgToWrite,
                         characteristicForStackingStartWrite
                     )
                 }
@@ -234,7 +237,6 @@ class MainActivity : AppCompatActivity() {
                     progressBar.visibility = View.VISIBLE
                     displaySnackbar("Scan in progress...", Snackbar.LENGTH_SHORT)
                 }
-
             } else {
                 // Device connected
                 bluetoothToggleButton.apply {

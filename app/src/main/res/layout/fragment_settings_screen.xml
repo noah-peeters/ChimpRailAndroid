@@ -31,7 +31,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <EditText
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preShutterWaitTime_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <EditText
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/postShutterWaitTime_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -97,7 +97,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <EditText
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/shuttersPerStep_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -130,7 +130,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <EditText
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/stepSize_EditText"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -283,7 +283,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1">
 
-                    <EditText
+                    <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/distanceModeTotalDistance_EditText"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"

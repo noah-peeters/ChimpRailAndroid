@@ -1,5 +1,6 @@
 package com.apenz1.blessed_android_ble_test
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -42,6 +43,7 @@ class SharedViewModel : ViewModel() {
 
     fun setPreShutterWaitTime(newVal: Int?) {
         _preShutterWaitTime.value = newVal!!
+        Log.d("NewValue", newVal.toString())
     }
 
     fun setPostShutterWaitTime(newVal: Int?) {

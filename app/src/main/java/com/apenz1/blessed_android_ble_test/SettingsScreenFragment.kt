@@ -153,11 +153,8 @@ class SettingsScreenFragment : Fragment() {
                     } else {
                         // Valid number --> remove error
                         inputLayout.error = null
-                        if (editText == stepSizeEditText) {
-                            setCorrectViewModelIntData(et, number)
-                            Log.d("SET NUMBER", number.toString())
-                            return
-                        }
+                        setCorrectViewModelIntData(et, number)
+                        return
                     }
                 } else {
                     // Invalid number (added other signs)
