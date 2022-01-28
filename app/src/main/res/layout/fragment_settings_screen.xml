@@ -295,45 +295,45 @@
                         android:tooltipText="Total distance of movement. Starting from the current position and going in the selected direction." />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Movement direction (for both operation modes) -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginHorizontal="25dp"
-            android:layout_marginVertical="10dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingBottom="60dp">
-
-            <TextView
+            <!-- Movement direction -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:includeFontPadding="false"
-                android:text="Movement direction:"
-                android:textAlignment="viewStart" />
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="25dp"
+                android:layout_marginVertical="10dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingBottom="60dp">
 
-            <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:includeFontPadding="false"
+                    android:text="Movement direction:"
+                    android:textAlignment="viewStart" />
 
-                <RadioButton
-                    android:id="@+id/forwardsMovementDirection_RadioButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:checked="true"
-                    android:text="Forwards" />
+                <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
 
-                <RadioButton
-                    android:id="@+id/backwardsMovementDirection_RadioButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:text="Backwards" />
-            </RadioGroup>
+                    <RadioButton
+                        android:id="@+id/forwardsMovementDirection_RadioButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:checked="true"
+                        android:text="Forwards" />
+
+                    <RadioButton
+                        android:id="@+id/backwardsMovementDirection_RadioButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="Backwards" />
+                </RadioGroup>
+            </LinearLayout>
         </LinearLayout>
 
     </LinearLayout>

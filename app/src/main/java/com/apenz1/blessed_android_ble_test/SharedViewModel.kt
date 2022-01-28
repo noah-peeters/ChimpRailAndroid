@@ -14,8 +14,10 @@ class SharedViewModel : ViewModel() {
     private val _stepSize = MutableLiveData<Int>()
     private val _returnToStartPosition = MutableLiveData<Boolean>()
     private val _operationMode = MutableLiveData<String>()
-    private val _totalDistance = MutableLiveData<Int>()
+    private val _totalStackingDistance = MutableLiveData<Int>()
     private val _movementDirection = MutableLiveData<String>()
+    private val _startPositionStacking = MutableLiveData<Int>()
+    private val _endPositionStacking = MutableLiveData<Int>()
 
     private val _currentMotorPosition = MutableLiveData<Int>()
 
@@ -30,8 +32,10 @@ class SharedViewModel : ViewModel() {
     val stepSize: LiveData<Int> = _stepSize
     val returnToStartPosition: LiveData<Boolean> = _returnToStartPosition
     val operationMode: LiveData<String> = _operationMode
-    val totalDistance: LiveData<Int> = _totalDistance
+    val totalStackingDistance: LiveData<Int> = _totalStackingDistance
     val movementDirection: LiveData<String> = _movementDirection
+    val startPositionStacking: LiveData<Int> = _startPositionStacking
+    val endPositionStacking: LiveData<Int> = _endPositionStacking
 
     val currentMotorPosition: LiveData<Int> = _currentMotorPosition
 
@@ -66,7 +70,15 @@ class SharedViewModel : ViewModel() {
         _operationMode.value = newVal!!
     }
 
-    fun setCurrentMotorPosition(newVal: Int) {
+    fun setStartPositionStacking(newVal: Int?) {
+        _startPositionStacking.value = newVal!!
+    }
+
+    fun setEndPositionStacking(newVal: Int?) {
+        _endPositionStacking.value = newVal!!
+    }
+
+    fun setCurrentMotorPosition(newVal: Int?) {
         _currentMotorPosition.value = newVal!!
     }
 
@@ -82,8 +94,8 @@ class SharedViewModel : ViewModel() {
         _shutterCommand.value = newVal!!
     }
 
-    fun setTotalDistance(newVal: Int?) {
-        _totalDistance.value = newVal!!
+    fun setTotalStackingDistance(newVal: Int?) {
+        _totalStackingDistance.value = newVal!!
     }
 
     fun setMovementDirection(newVal: String?) {

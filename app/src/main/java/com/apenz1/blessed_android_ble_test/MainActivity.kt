@@ -29,6 +29,7 @@ import com.leinardi.android.speeddial.FabWithLabelView
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
 import java.util.*
+import kotlin.math.abs
 import kotlin.math.ceil
 
 
@@ -176,23 +177,36 @@ class MainActivity : AppCompatActivity() {
                     val postShutterWaitTime = sharedViewModel.postShutterWaitTime.value
                     val shuttersPerStep = sharedViewModel.shuttersPerStep.value
                     val stepSize = sharedViewModel.stepSize.value
-                    val movementDirection = sharedViewModel.movementDirection.value
                     val returnToStartPosition = sharedViewModel.returnToStartPosition.value
 
-                    // Calculate number of steps to take
+                    // Calculate other settings (specific to stacking mode used)
+                    var startPosition = sharedViewModel.currentMotorPosition.value
                     var numberOfStepsToTake = 0
+                    var movementDirection = "FWD"
                     if (sharedViewModel.operationMode.value == "Start to end") {
                         // TODO: Use Start/end positions
-                    } else if (sharedViewModel.operationMode.value == "Distance") {
-                        var totalDistance = sharedViewModel.totalDistance.value
-                        if (totalDistance != null) {
+                        val startPos = sharedViewModel.startPositionStacking.value
+                        val endPos = sharedViewModel.endPositionStacking.value
+                        if (startPos != null && endPos != null) {
+                            startPosition = startPos
+                            val totalDistance = endPos - startPos
                             numberOfStepsToTake =
                                 ceil(totalDistance.toDouble() / stepSize!!).toInt()
+                            if (totalDistance < 0) {
+                                movementDirection = "BCK"
+                            }
                         }
+                    } else if (sharedViewModel.operationMode.value == "Distance") {
+                        val totalDistance = sharedViewModel.totalStackingDistance.value
+                        if (totalDistance != null) {
+                            numberOfStepsToTake =
+                                ceil(abs(totalDistance.toDouble()) / stepSize!!).toInt()
+                        }
+                        movementDirection = sharedViewModel.movementDirection.value.toString()
                     }
 
                     val msgToWrite =
-                        "PRE$preShutterWaitTime;PST$postShutterWaitTime;STP$shuttersPerStep;STS$stepSize;DIR$movementDirection;NST$numberOfStepsToTake;RTS$returnToStartPosition"
+                        "PRE$preShutterWaitTime;PST$postShutterWaitTime;STP$shuttersPerStep;STS$stepSize;DIR$movementDirection;SPS$startPosition;NST$numberOfStepsToTake;RTS$returnToStartPosition"
                     Log.d("MSGToSend", msgToWrite)
                     // Send processed stack instructions to device
                     writeMessageToPeripheral(

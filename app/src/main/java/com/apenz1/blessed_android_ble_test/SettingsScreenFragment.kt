@@ -7,10 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.RadioButton
+import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.google.android.material.textfield.TextInputLayout
@@ -68,13 +65,6 @@ class SettingsScreenFragment : Fragment() {
             1,
             10000 // 10.000 µm = 1cm
         )
-        setupEditText(
-            totalDistanceEditText,
-            view.findViewById(R.id.distanceModeTotalDistance_InputLayout),
-            1,
-            500000 // 500.000 µm = 50cm
-        )
-
         // Checkbox setup
         sharedViewModel.setReturnToStartPosition(true)
         view.findViewById<CheckBox>(R.id.returnToStartPosition_CheckBox).setOnClickListener { v ->
@@ -93,13 +83,32 @@ class SettingsScreenFragment : Fragment() {
         distanceModeLayout.visibility = View.GONE
         sharedViewModel.setOperationMode("Start to end")
 
-        //-- Movement direction buttons setup --//
+        //-- Setup for Start to end mode --//
+        // TODO: Listen for changes inside MainActivity and detect if start and end are the same and notify user on value set
+        view.findViewById<Button>(R.id.startToEndModeSetStartPoint_Button)
+            .setOnClickListener {
+                sharedViewModel.setStartPositionStacking(sharedViewModel.currentMotorPosition.value)
+            }
+        view.findViewById<Button>(R.id.startToEndModeSetEndPoint_Button)
+            .setOnClickListener {
+                sharedViewModel.setEndPositionStacking(sharedViewModel.currentMotorPosition.value)
+            }
+
+        //-- Setup for distance mode --//
+        setupEditText(
+            totalDistanceEditText,
+            view.findViewById(R.id.distanceModeTotalDistance_InputLayout),
+            1,
+            500000 // 500.000 µm = 50cm
+        )
+        //Movement direction buttons
         view.findViewById<RadioButton>(R.id.forwardsMovementDirection_RadioButton)
             .setOnClickListener(movementDirectionRadioButtonClicked)
         view.findViewById<RadioButton>(R.id.backwardsMovementDirection_RadioButton)
             .setOnClickListener(movementDirectionRadioButtonClicked)
         // First setup
         sharedViewModel.setMovementDirection("FWD")
+
 
         return view
     }
@@ -120,7 +129,7 @@ class SettingsScreenFragment : Fragment() {
                 sharedViewModel.setStepSize(newValue)
             }
             s === totalDistanceEditText.editableText -> {
-                sharedViewModel.setTotalDistance(newValue)
+                sharedViewModel.setTotalStackingDistance(newValue)
             }
         }
     }
