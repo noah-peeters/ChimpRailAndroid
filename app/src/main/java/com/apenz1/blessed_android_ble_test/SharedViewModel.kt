@@ -17,6 +17,8 @@ class SharedViewModel : ViewModel() {
     private val _totalDistance = MutableLiveData<Int>()
     private val _movementDirection = MutableLiveData<String>()
 
+    private val _currentMotorPosition = MutableLiveData(0)
+
     private val _stepMovementCommand = MutableLiveData<String>()
     private val _continuousMovementCommand = MutableLiveData<String>()
     private val _shutterCommand = MutableLiveData<Boolean>()
@@ -30,6 +32,8 @@ class SharedViewModel : ViewModel() {
     val operationMode: LiveData<String> = _operationMode
     val totalDistance: LiveData<Int> = _totalDistance
     val movementDirection: LiveData<String> = _movementDirection
+
+    val currentMotorPosition: LiveData<Int> = _currentMotorPosition
 
     val stepMovementCommand: LiveData<String> = _stepMovementCommand
     val continuousMovementCommand: LiveData<String> = _continuousMovementCommand
@@ -60,6 +64,10 @@ class SharedViewModel : ViewModel() {
 
     fun setOperationMode(newVal: String?) {
         _operationMode.value = newVal!!
+    }
+
+    fun setCurrentMotorPosition(newVal: Int) {
+        _currentMotorPosition.value = newVal!!
     }
 
     fun setStepMovementCommand(newVal: String?) {

@@ -1,12 +1,12 @@
 package com.apenz1.blessed_android_ble_test
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 
@@ -23,7 +23,13 @@ class ControlScreenFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_control_screen, container, false)
 
-        // Set OnCLickListeners for step buttons to be handled by MainActivity
+        // Listen to current motor position change
+        val currentPositionTextView = view.findViewById<TextView>(R.id.currentPositionTextView)
+        sharedViewModel.currentMotorPosition.observe(viewLifecycleOwner) { newValue ->
+            currentPositionTextView.text = newValue.toString()
+        }
+
+        // Set OnCLickListeners for step buttons. Values are updated in a ViewModel and then handled by MainActivity
         val stepForwardsBtn = view.findViewById<Button>(R.id.stepForwardsButton)
         val stepBackwardsBtn = view.findViewById<Button>(R.id.stepBackwardsButton)
         stepForwardsBtn.setOnClickListener(stepMovementButtonsClickListener)

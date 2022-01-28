@@ -12,6 +12,7 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
     }
 
     private val bleQueue: Queue<Action> = LinkedList()
+
     fun writeDescriptor(descriptor: BluetoothGattDescriptor) {
         addAction(ActionType.WriteDescriptor, descriptor)
     }
@@ -60,28 +61,30 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
         if (bleQueue.isEmpty()) return
         val action: Action = bleQueue.element()
 
+        var success = false
         when (action.type) {
             ActionType.WriteDescriptor -> {
-                mBluetoothGatt.writeDescriptor(
+                success = mBluetoothGatt.writeDescriptor(
                     action.`object` as BluetoothGattDescriptor
                 )
             }
             ActionType.WriteCharacteristic -> {
-                val success = mBluetoothGatt.writeCharacteristic(
+                success = mBluetoothGatt.writeCharacteristic(
                     action.`object` as BluetoothGattCharacteristic
                 )
-                if (success) {
-                    bleQueue.remove()
-                } else {
-                    // TODO: add retry timeout
-                    nextAction()
-                }
+
             }
             ActionType.ReadCharacteristic -> {
-                mBluetoothGatt.writeCharacteristic(
+                success = mBluetoothGatt.writeCharacteristic(
                     action.`object` as BluetoothGattCharacteristic
                 )
             }
+        }
+        if (success) {
+            bleQueue.remove()
+        } else {
+            // TODO: add retry timeout
+            nextAction()
         }
     }
 
