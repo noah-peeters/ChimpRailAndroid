@@ -191,7 +191,7 @@ class MainActivity : AppCompatActivity() {
                             startPosition = startPos
                             val totalDistance = endPos - startPos
                             numberOfStepsToTake =
-                                ceil(totalDistance.toDouble() / stepSize!!).toInt()
+                                ceil(abs(totalDistance.toDouble()) / stepSize!!).toInt()
                             if (totalDistance < 0) {
                                 movementDirection = "BCK"
                             }
@@ -200,7 +200,7 @@ class MainActivity : AppCompatActivity() {
                         val totalDistance = sharedViewModel.totalStackingDistance.value
                         if (totalDistance != null) {
                             numberOfStepsToTake =
-                                ceil(abs(totalDistance.toDouble()) / stepSize!!).toInt()
+                                ceil(totalDistance.toDouble() / stepSize!!).toInt()
                         }
                         movementDirection = sharedViewModel.movementDirection.value.toString()
                     }
