@@ -87,11 +87,15 @@ class SettingsScreenFragment : Fragment() {
         // TODO: Listen for changes inside MainActivity and detect if start and end are the same and notify user on value set
         view.findViewById<Button>(R.id.startToEndModeSetStartPoint_Button)
             .setOnClickListener {
-                sharedViewModel.setStartPositionStacking(sharedViewModel.currentMotorPosition.value)
+                if (sharedViewModel.currentMotorPosition.value != null) {
+                    sharedViewModel.setStartPositionStacking(sharedViewModel.currentMotorPosition.value)
+                }
             }
         view.findViewById<Button>(R.id.startToEndModeSetEndPoint_Button)
             .setOnClickListener {
-                sharedViewModel.setEndPositionStacking(sharedViewModel.currentMotorPosition.value)
+                if (sharedViewModel.currentMotorPosition.value != null) {
+                    sharedViewModel.setEndPositionStacking(sharedViewModel.currentMotorPosition.value)
+                }
             }
 
         //-- Setup for distance mode --//

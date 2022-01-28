@@ -6,6 +6,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -29,6 +31,8 @@ class ControlScreenFragment : Fragment() {
             currentPositionTextView.text = newValue.toString()
         }
 
+        setupStackingProgressLayout(view)
+
         // Set OnCLickListeners for step buttons. Values are updated in a ViewModel and then handled by MainActivity
         val stepForwardsBtn = view.findViewById<Button>(R.id.stepForwardsButton)
         val stepBackwardsBtn = view.findViewById<Button>(R.id.stepBackwardsButton)
@@ -43,9 +47,37 @@ class ControlScreenFragment : Fragment() {
         forwardsButton.setOnTouchListener(onContinuousMovementButtonsTouch)
         backwardsButton.setOnTouchListener(onContinuousMovementButtonsTouch)
         // Shutter button
-        view.findViewById<Button>(R.id.shutterButton).setOnClickListener(shutterButtonClickListener)
+        view.findViewById<Button>(R.id.shutterButton).setOnClickListener {
+            sharedViewModel.setShutterCommand(true)
+        }
 
         return view
+    }
+
+    // Displays stacking progress LinearLayout when needed
+    private fun setupStackingProgressLayout(view: View) {
+        val stackingProgressLinearLayout =
+            view.findViewById<LinearLayout>(R.id.stackingProgress_LinearLayout)
+        val stackingTotalDistanceTextView =
+            view.findViewById<TextView>(R.id.stackingProgressTotalDistance_TextView)
+        val progressBar = view.findViewById<ProgressBar>(R.id.stackingProgress_ProgressBar)
+        val timeRemaining =
+            view.findViewById<TextView>(R.id.stackingProgressTimeRemaining_TextView)
+
+        stackingProgressLinearLayout.visibility = View.GONE
+        sharedViewModel.stackingProgressRawText.observe(viewLifecycleOwner) { newValue ->
+            if (newValue.isNotEmpty()) {
+                stackingProgressLinearLayout.visibility = View.VISIBLE
+            } else {
+                // Stacking has stopped; hide layout
+                stackingProgressLinearLayout.visibility = View.GONE
+            }
+        }
+
+        // Stop Stacking button
+        view.findViewById<Button>(R.id.stopStackingButton)?.setOnClickListener {
+            sharedViewModel.setStopStackingCommand(true)
+        }
     }
 
     // Step movement buttons OnClickListener. Updates values in SharedModelView
@@ -99,9 +131,4 @@ class ControlScreenFragment : Fragment() {
             view.performClick()
             return@OnTouchListener true
         }
-
-    // Shutter button OnClickListener
-    private val shutterButtonClickListener = View.OnClickListener { _ ->
-        sharedViewModel.setShutterCommand(true)
-    }
 }

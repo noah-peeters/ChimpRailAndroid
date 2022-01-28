@@ -93,9 +93,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="0"
-                android:textAlignment="viewEnd" />
+                android:textAlignment="viewStart" />
         </LinearLayout>
 
+        <!-- Goto position command (TODO) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -123,6 +124,100 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Go" />
+        </LinearLayout>
+
+        <!-- Stacking progress + "stop" button -->
+        <LinearLayout
+            android:id="@+id/stackingProgress_LinearLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="15dp"
+            android:layout_marginVertical="15dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Stacking progress"
+                android:textColor="@color/design_default_color_on_primary"
+                android:textSize="25dp" />
+
+            <View style="@style/Divider" />
+
+            <!-- Total distance -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginVertical="15dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Total distance (µm):" />
+
+                <TextView
+                    android:id="@+id/stackingProgressTotalDistance_TextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0"
+                    android:textAlignment="viewStart" />
+            </LinearLayout>
+
+            <!-- Progress bar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginVertical="15dp"
+                android:orientation="vertical">
+
+                <ProgressBar
+                    android:id="@+id/stackingProgress_ProgressBar"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="false"
+                    android:progress="50"
+                    android:visibility="visible" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginHorizontal="15dp"
+                    android:layout_marginVertical="15dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Time remaining (HH:MM:SS):" />
+
+                    <TextView
+                        android:id="@+id/stackingProgressTimeRemaining_TextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="0"
+                        android:textAlignment="viewStart" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/stopStackingButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginVertical="15dp"
+                android:text="Stop Stacking" />
         </LinearLayout>
 
     </LinearLayout>

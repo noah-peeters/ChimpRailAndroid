@@ -40,10 +40,10 @@ private const val CHAR_FOR_READ_UUID = "f33dee97-d3d8-4fbd-8162-c980133f0c93"
 private const val STEP_MOVEMENT_WRITE_UUID = "908badf3-fd6b-4eec-b362-2810e97db94e"
 private const val START_STACKING_WRITE_UUID = "bed1dd25-79f2-4ce2-a6fa-000471efe3a0"
 private const val CONTINUOUS_MOVEMENT_WRITE_UUID = "28c74a57-67cb-4b43-8adf-8776c1dbc475"
-private const val NOTIFY_STEPS_UUID = "d2f362f4-6542-4b13-be5e-8c81d423a347"
+private const val NOTIFY_CURRENT_MOTOR_POSITION_UUID = "d2f362f4-6542-4b13-be5e-8c81d423a347"
+private const val NOTIFY_STACKING_STEPS_TAKEN_UUID = "c14b46e2-553a-4664-98b0-653494882964"
 private const val CCC_DESCRIPTOR_UUID =
     "00002902-0000-1000-8000-00805f9b34fb" // Client Characteristic Configuration Descriptor (standard for notify)
-private const val NOTIFY_STEPS_DESCRIPTOR_UUID = "c14b46e2-553a-4664-98b0-653494882964"
 
 // TODO: Bluetooth gets disconnected on application tilt (MainActivity recreated??)
 class MainActivity : AppCompatActivity() {
@@ -58,8 +58,6 @@ class MainActivity : AppCompatActivity() {
         Disconnected,
         Scanning,
         Connecting,
-        ConnectedDiscovering,
-        ConnectedSubscribing,
         Connected
     }
 
@@ -78,7 +76,8 @@ class MainActivity : AppCompatActivity() {
     var characteristicForStepMovementWrite: BluetoothGattCharacteristic? = null
     var characteristicForContinuousMovementWrite: BluetoothGattCharacteristic? = null
     var characteristicForStackingStartWrite: BluetoothGattCharacteristic? = null
-    private var characteristicForNotify: BluetoothGattCharacteristic? = null
+    var characteristicForMotorPositionNotify: BluetoothGattCharacteristic? = null
+    var characteristicForStackingStepsTakenNotify: BluetoothGattCharacteristic? = null
 
     // Display Snackbar notification that can be dismissed
     private fun displaySnackbar(msg: String, length: Int) {
@@ -128,10 +127,18 @@ class MainActivity : AppCompatActivity() {
             )
         }
         // Shutter release
+        // TODO: Implement
         sharedViewModel.shutterCommand.observe(this) { newCommand ->
             writeMessageToPeripheral(
                 newCommand.toString(),
                 characteristicForContinuousMovementWrite
+            )
+        }
+        // Stop stacking
+        sharedViewModel.stopStackingCommand.observe(this) {
+            writeMessageToPeripheral(
+                "Stop",
+                characteristicForStackingStartWrite
             )
         }
     }
@@ -184,7 +191,6 @@ class MainActivity : AppCompatActivity() {
                     var numberOfStepsToTake = 0
                     var movementDirection = "FWD"
                     if (sharedViewModel.operationMode.value == "Start to end") {
-                        // TODO: Use Start/end positions
                         val startPos = sharedViewModel.startPositionStacking.value
                         val endPos = sharedViewModel.endPositionStacking.value
                         if (startPos != null && endPos != null) {
@@ -284,6 +290,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    /*
     fun onTapRead(view: View) {
         var gatt = connectedGatt ?: run {
             displaySnackbar("No device connected!", Snackbar.LENGTH_SHORT)
@@ -299,6 +306,7 @@ class MainActivity : AppCompatActivity() {
         }
         gatt.readCharacteristic(characteristic)
     }
+    */
 
     // Send a message to the peripheral
     private fun writeMessageToPeripheral(
@@ -337,11 +345,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun setConnectedGattToNull() {
         connectedGatt = null
+
         characteristicForRead = null
         characteristicForStepMovementWrite = null
         characteristicForContinuousMovementWrite = null
         characteristicForStackingStartWrite = null
-        characteristicForNotify = null
+        characteristicForMotorPositionNotify = null
+        characteristicForStackingStepsTakenNotify = null
 
         updateBluetoothToggleState()
     }
@@ -413,46 +423,11 @@ class MainActivity : AppCompatActivity() {
     ) {
         // First allow notifications, then write to config descriptor
         gatt.setCharacteristicNotification(characteristic, true)
-        val descriptor =
-            characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
+        val descriptor = characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-
         bluetoothQueue.writeDescriptor(descriptor)
-        // gatt.writeDescriptor(descriptor)
-
-        /*
-        characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))?.let
-        { cccDescriptor ->
-            if (!gatt.setCharacteristicNotification(characteristic, true)) {
-                Log.d("ERROR", "setNotification(true) failed for ${characteristic.uuid}")
-                return
-            }
-            cccDescriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            gatt.writeDescriptor(cccDescriptor)
-        }
-        */
+        //gatt.writeDescriptor(descriptor)
     }
-/*
-private fun setCharacteristicNotification(
-    characteristic: BluetoothGattCharacteristic,
-    gatt: BluetoothGatt,
-    enabled: Boolean
-) {
-    bluetoothGatt?.let { gatt ->
-        gatt.setCharacteristicNotification(characteristic, enabled)
-
-        // This is specific to Heart Rate Measurement.
-        if (characteristic.uuid == NOTIFY_STEPS_UUID) {
-            val cccdUuid = UUID.fromString(CCC_DESCRIPTOR_UUID)
-            val descriptor = characteristic.getDescriptor(cccdUuid)
-            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            gatt.writeDescriptor(descriptor)
-        }
-    } ?: run {
-        Log.w("BLE_Notification", "BluetoothGatt not initialized")
-    }
-}
-*/
 
 
     private fun unsubscribeFromCharacteristic(characteristic: BluetoothGattCharacteristic) {
@@ -504,7 +479,6 @@ private fun setCharacteristicNotification(
                     // TODO: bonding state
                     // recommended on UI thread https://punchthrough.com/android-ble-guide/
                     Handler(Looper.getMainLooper()).post {
-                        lifecycleState = BLELifecycleState.ConnectedDiscovering
                         gatt.discoverServices()
                     }
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -557,20 +531,34 @@ private fun setCharacteristicNotification(
                 service.getCharacteristic(UUID.fromString(CONTINUOUS_MOVEMENT_WRITE_UUID))
             characteristicForStackingStartWrite =
                 service.getCharacteristic(UUID.fromString(START_STACKING_WRITE_UUID))
-            characteristicForNotify =
-                service.getCharacteristic(UUID.fromString(NOTIFY_STEPS_UUID))
+            characteristicForMotorPositionNotify =
+                service.getCharacteristic(UUID.fromString(NOTIFY_CURRENT_MOTOR_POSITION_UUID))
+            characteristicForStackingStepsTakenNotify = service.getCharacteristic(
+                UUID.fromString(
+                    NOTIFY_STACKING_STEPS_TAKEN_UUID
+                )
+            )
 
-            characteristicForNotify?.let {
-                lifecycleState = BLELifecycleState.ConnectedSubscribing
+            // Subscribe to notification sends
+            /*
+            characteristicForMotorPositionNotify?.let {
+                // lifecycleState = BLELifecycleState.ConnectedSubscribing
                 subscribeToNotifications(it, gatt)
             } ?: run {
-                Log.d("WARN", "characteristic not found $NOTIFY_STEPS_UUID")
+                Log.d("WARN", "characteristic not found ")
                 lifecycleState = BLELifecycleState.Connected
             }
+            */
+
+            subscribeToNotifications(characteristicForMotorPositionNotify!!, connectedGatt!!)
+            // subscribeToNotifications(characteristicForStackingStepsTakenNotify!!, connectedGatt!!)
+
+            lifecycleState = BLELifecycleState.Connected
 
             updateBluetoothToggleState()
         }
 
+        // TODO: Remove
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -589,67 +577,24 @@ private fun setCharacteristicNotification(
             }
         }
 
-        /*
-        override fun onCharacteristicWrite(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-
-            if (characteristic.uuid == UUID.fromString(STEP_MOVEMENT_WRITE_UUID)) {
-                val log: String = "onCharacteristicWrite " + when (status) {
-                    BluetoothGatt.GATT_SUCCESS -> "OK"
-                    BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> "not allowed"
-                    BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH -> "invalid length"
-                    else -> "error $status"
-                }
-                Log.d("MSG", log)
-            } else {
-                Log.d("MSG", "onCharacteristicWrite unknown uuid $characteristic.uuid")
-            }
-        }
-        */
-
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            if (characteristic.uuid == UUID.fromString(NOTIFY_STEPS_UUID)) {
-                val strValue = characteristic.value.toString(Charsets.UTF_8)
-                // TODO: Error handling?
-                runOnUiThread {
-                    sharedViewModel.setCurrentMotorPosition(strValue.toInt())
-                }
-            } else {
-                Log.d("MSG", "onCharacteristicChanged unknown uuid $characteristic.uuid")
-            }
-        }
-
-        // Update descriptor status (used for notify connection)
-        override fun onDescriptorWrite(
-            gatt: BluetoothGatt,
-            descriptor: BluetoothGattDescriptor,
-            status: Int
-        ) {
-            if (descriptor.characteristic.uuid == UUID.fromString(NOTIFY_STEPS_UUID)) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val value = descriptor.value
-                    val subscriptionText = when (value.isNotEmpty() && value[0].toInt() != 0) {
-                        true -> "Subscribed"
-                        false -> "Not subscribed"
+            when (characteristic.uuid) {
+                UUID.fromString(NOTIFY_CURRENT_MOTOR_POSITION_UUID) -> {
+                    val strValue = characteristic.value.toString(Charsets.UTF_8)
+                    runOnUiThread {
+                        sharedViewModel.setCurrentMotorPosition(strValue.toInt())
                     }
-                    Log.d("MSG", "onDescriptorWrite $subscriptionText")
-                } else {
-                    Log.d(
-                        "ERROR",
-                        "onDescriptorWrite status=$status uuid=${descriptor.uuid} char=${descriptor.characteristic.uuid}"
-                    )
                 }
-
-                // Subscription processed, consider connection is ready for use
-                lifecycleState = BLELifecycleState.Connected
-            } else {
-                Log.d("MSG", "onDescriptorWrite unknown uuid $descriptor.characteristic.uuid")
+                UUID.fromString(NOTIFY_STACKING_STEPS_TAKEN_UUID) -> {
+                    val strValue = characteristic.value.toString(Charsets.UTF_8)
+                    Log.d("NOTIFY_STACKING_STEPS_TAKEN update:", strValue)
+                    runOnUiThread {
+                        sharedViewModel.setStackingProgressRawText(strValue)
+                    }
+                }
             }
         }
     }

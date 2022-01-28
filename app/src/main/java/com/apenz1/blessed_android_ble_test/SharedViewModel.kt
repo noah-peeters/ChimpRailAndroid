@@ -18,12 +18,12 @@ class SharedViewModel : ViewModel() {
     private val _movementDirection = MutableLiveData<String>()
     private val _startPositionStacking = MutableLiveData<Int>()
     private val _endPositionStacking = MutableLiveData<Int>()
-
     private val _currentMotorPosition = MutableLiveData<Int>()
-
     private val _stepMovementCommand = MutableLiveData<String>()
     private val _continuousMovementCommand = MutableLiveData<String>()
     private val _shutterCommand = MutableLiveData<Boolean>()
+    private val _stopStackingCommand = MutableLiveData<Boolean>()
+    private val _stackingProgressRawText = MutableLiveData<String>()
 
     //-- Public vars --//
     val preShutterWaitTime: LiveData<Int> = _preShutterWaitTime
@@ -36,12 +36,12 @@ class SharedViewModel : ViewModel() {
     val movementDirection: LiveData<String> = _movementDirection
     val startPositionStacking: LiveData<Int> = _startPositionStacking
     val endPositionStacking: LiveData<Int> = _endPositionStacking
-
     val currentMotorPosition: LiveData<Int> = _currentMotorPosition
-
     val stepMovementCommand: LiveData<String> = _stepMovementCommand
     val continuousMovementCommand: LiveData<String> = _continuousMovementCommand
     val shutterCommand: LiveData<Boolean> = _shutterCommand
+    val stopStackingCommand: LiveData<Boolean> = _stopStackingCommand
+    val stackingProgressRawText: LiveData<String> = _stackingProgressRawText
 
 
     //-- Setter functions --//
@@ -51,7 +51,6 @@ class SharedViewModel : ViewModel() {
 
     fun setPreShutterWaitTime(newVal: Int?) {
         _preShutterWaitTime.value = newVal!!
-        Log.d("NewValue", newVal.toString())
     }
 
     fun setPostShutterWaitTime(newVal: Int?) {
@@ -94,11 +93,19 @@ class SharedViewModel : ViewModel() {
         _shutterCommand.value = newVal!!
     }
 
+    fun setStopStackingCommand(newVal: Boolean?) {
+        _stopStackingCommand.value = newVal!!
+    }
+
     fun setTotalStackingDistance(newVal: Int?) {
         _totalStackingDistance.value = newVal!!
     }
 
     fun setMovementDirection(newVal: String?) {
         _movementDirection.value = newVal!!
+    }
+
+    fun setStackingProgressRawText(newVal: String?) {
+        _stackingProgressRawText.value = newVal!!
     }
 }
