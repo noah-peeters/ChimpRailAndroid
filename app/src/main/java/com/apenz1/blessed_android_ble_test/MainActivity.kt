@@ -1,5 +1,6 @@
 package com.apenz1.blessed_android_ble_test
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.bluetooth.*
@@ -7,7 +8,10 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.*
 import android.util.Log
@@ -35,6 +39,7 @@ import kotlin.math.ceil
 
 private const val ENABLE_BLUETOOTH_REQUEST_CODE = 1
 private const val LOCATION_PERMISSION_REQUEST_CODE = 2
+
 private const val SERVICE_UUID = "a7f8fe1b-a57d-46a3-a0da-947a1d8c59ce"
 private const val CHAR_FOR_READ_UUID = "f33dee97-d3d8-4fbd-8162-c980133f0c93"
 private const val STEP_MOVEMENT_WRITE_UUID = "908badf3-fd6b-4eec-b362-2810e97db94e"
@@ -48,6 +53,7 @@ private const val CCC_DESCRIPTOR_UUID =
 // TODO: Bluetooth gets disconnected on application tilt (MainActivity recreated??)
 class MainActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
+    private lateinit var speedDialView: SpeedDialView
     private lateinit var bluetoothToggleButton: FabWithLabelView
     private lateinit var progressBar: ProgressBar
     private lateinit var bluetoothQueue: BleQueue
@@ -69,7 +75,6 @@ class MainActivity : AppCompatActivity() {
         bluetoothAdapter.bluetoothLeScanner
     }
     private var lifecycleState = BLELifecycleState.Disconnected
-    private var userWantsToScanAndConnect: Boolean = false
     private var isScanning = false
     private var connectedGatt: BluetoothGatt? = null
     private var characteristicForRead: BluetoothGattCharacteristic? = null
@@ -82,12 +87,52 @@ class MainActivity : AppCompatActivity() {
     // Display Snackbar notification that can be dismissed
     private fun displaySnackbar(msg: String, length: Int) {
         val parentLayout = findViewById<View>(android.R.id.content)
-        val snackBar = Snackbar
-            .make(parentLayout, msg, length)
+        val snackBar = Snackbar.make(parentLayout, msg, length)
         snackBar.setAction("DISMISS") {
             snackBar.dismiss()
         }
+        snackBar.anchorView = speedDialView // Display above FAB
         snackBar.show()
+    }
+
+    //-- Permission utility functions --//
+    private fun promptEnableBluetooth() {
+        if (!bluetoothAdapter.isEnabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, ENABLE_BLUETOOTH_REQUEST_CODE)
+        }
+    }
+
+    private fun requestLocationPermission() {
+        if (isLocationPermissionGranted) {
+            return
+        }
+        runOnUiThread {
+            val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
+            alertDialog.setTitle("Location permission required")
+            alertDialog.setMessage("Location access is needed to scan for BLE devices.")
+            alertDialog.setPositiveButton("Ok") { _, _ ->
+                requestPermission(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    LOCATION_PERMISSION_REQUEST_CODE
+                )
+            }
+            alertDialog.setNegativeButton("Cancel") { _, _ ->
+                displaySnackbar("Failed to start scanning!", Snackbar.LENGTH_SHORT)
+            }
+            val alert: AlertDialog = alertDialog.create()
+            alert.setCanceledOnTouchOutside(false)
+            alert.show()
+
+        }
+    }
+
+    private val isLocationPermissionGranted
+        get() = hasPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+
+    fun Context.hasPermission(permissionType: String): Boolean {
+        return ContextCompat.checkSelfPermission(this, permissionType) ==
+                PackageManager.PERMISSION_GRANTED
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,9 +188,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (!bluetoothAdapter.isEnabled) {
+            promptEnableBluetooth()
+        }
+    }
+
     // SpeedDial setup (always on top button)
     private fun setupSpeedDial() {
-        val speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
+        speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
         speedDialView.addActionItem(
             SpeedDialActionItem.Builder(
                 R.id.fab_start_stacking_button,
@@ -167,16 +219,20 @@ class MainActivity : AppCompatActivity() {
             when (actionItem.id) {
                 R.id.fab_bluetooth_button -> {
                     // TODO: App crash when scan is running and user disables Bluetooth
-                    if (userWantsToScanAndConnect) {
-                        // Stop scanning
+                    // Re-start scanning (might throw error if not yet registered)
+                    try {
                         unregisterReceiver(bleOnOffListener)
-                    } else {
-                        // Start scanning
-                        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-                        registerReceiver(bleOnOffListener, filter)
+                    } catch (e: IllegalArgumentException) {
+                        e.printStackTrace()
                     }
-                    userWantsToScanAndConnect = !userWantsToScanAndConnect
-                    bleRestartLifecycle()
+                    val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+                    registerReceiver(bleOnOffListener, filter)
+                    // Restart lifecycle + stop/start scan
+                    if (isScanning) {
+                        bleRestartLifecycle(false)
+                    } else {
+                        bleRestartLifecycle(true)
+                    }
                 }
                 R.id.fab_start_stacking_button -> {
                     // Get values
@@ -229,8 +285,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Update BluetoothToggle FAB state (label text) + notify user with Snackbar update
-    // TODO: Inspect what happens on peripheral disconnect (unplug device)
-    // TODO: Not reconnecting after long scan?? (scan started due to disconnection)
+// TODO: Inspect what happens on peripheral disconnect (unplug device)
+// TODO: Not reconnecting after long scan?? (scan started due to disconnection)
     fun updateBluetoothToggleState() {
         runOnUiThread {
             if (connectedGatt == null) {
@@ -242,10 +298,6 @@ class MainActivity : AppCompatActivity() {
                             speedDialActionItemBuilder.setLabel("Connect to device").create()
                     }
                     progressBar.visibility = View.GONE
-                    displaySnackbar(
-                        "Disconnected from device. Not scanning.",
-                        Snackbar.LENGTH_LONG
-                    )
                 } else {
                     // Scan in progress
                     bluetoothToggleButton.apply {
@@ -290,23 +342,23 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    /*
-    fun onTapRead(view: View) {
-        var gatt = connectedGatt ?: run {
-            displaySnackbar("No device connected!", Snackbar.LENGTH_SHORT)
-            return
-        }
-        var characteristic = characteristicForRead ?: run {
-            Log.d("ERROR", "read failed, characteristic unavailable $CHAR_FOR_READ_UUID")
-            return
-        }
-        if (!characteristic.isReadable()) {
-            Log.d("ERROR", "read failed, characteristic not readable $CHAR_FOR_READ_UUID")
-            return
-        }
-        gatt.readCharacteristic(characteristic)
+/*
+fun onTapRead(view: View) {
+    var gatt = connectedGatt ?: run {
+        displaySnackbar("No device connected!", Snackbar.LENGTH_SHORT)
+        return
     }
-    */
+    var characteristic = characteristicForRead ?: run {
+        Log.d("ERROR", "read failed, characteristic unavailable $CHAR_FOR_READ_UUID")
+        return
+    }
+    if (!characteristic.isReadable()) {
+        Log.d("ERROR", "read failed, characteristic not readable $CHAR_FOR_READ_UUID")
+        return
+    }
+    gatt.readCharacteristic(characteristic)
+}
+*/
 
     // Send a message to the peripheral
     private fun writeMessageToPeripheral(
@@ -357,11 +409,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Restart BLE lifecycle
-    private fun bleRestartLifecycle() {
+    private fun bleRestartLifecycle(scanBool: Boolean) {
         runOnUiThread {
-            if (userWantsToScanAndConnect) {
+            if (scanBool) {
                 if (connectedGatt == null) {
-                    prepareAndStartBleScan()
+                    safeStartBleScan()
                 } else {
                     connectedGatt?.disconnect()
                 }
@@ -371,21 +423,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun prepareAndStartBleScan() {
-        ensureBluetoothCanBeUsed { isSuccess, message ->
-            // Log.d("MSG", message)
-            if (isSuccess) {
-                safeStartBleScan()
-            }
-        }
-    }
-
     private fun safeStartBleScan() {
         if (isScanning) {
-            Log.d("MSG", "Already scanning")
+            return
+        }
+        if (!isLocationPermissionGranted) {
+            // Permission (only needed for scanning)
+            requestLocationPermission()
             return
         }
 
+        // Proceed to scan
         val serviceFilter = scanFilter.serviceUuid?.uuid.toString()
         Log.d("MSG", "Starting BLE scan, filter: $serviceFilter")
 
@@ -399,7 +447,6 @@ class MainActivity : AppCompatActivity() {
             .setReportDelay(0)
             .build()
         bleScanner.startScan(mutableListOf(scanFilter), scanSettings, scanCallback)
-
         updateBluetoothToggleState()
     }
 
@@ -426,7 +473,6 @@ class MainActivity : AppCompatActivity() {
         val descriptor = characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         bluetoothQueue.writeDescriptor(descriptor)
-        //gatt.writeDescriptor(descriptor)
     }
 
 
@@ -463,7 +509,7 @@ class MainActivity : AppCompatActivity() {
             Log.d("MSG", "onScanFailed errorCode=$errorCode")
             safeStopBleScan()
             lifecycleState = BLELifecycleState.Disconnected
-            bleRestartLifecycle()
+            bleRestartLifecycle(false)
         }
     }
 
@@ -486,7 +532,7 @@ class MainActivity : AppCompatActivity() {
                     setConnectedGattToNull()
                     gatt.close()
                     lifecycleState = BLELifecycleState.Disconnected
-                    bleRestartLifecycle()
+                    bleRestartLifecycle(false)
                 }
             } else {
                 // TODO: random error 133 - close() and try reconnect
@@ -499,7 +545,7 @@ class MainActivity : AppCompatActivity() {
                 setConnectedGattToNull()
                 gatt.close()
                 lifecycleState = BLELifecycleState.Disconnected
-                bleRestartLifecycle()
+                bleRestartLifecycle(false)
             }
         }
 
@@ -550,9 +596,11 @@ class MainActivity : AppCompatActivity() {
             }
             */
 
+            Log.d("UPDATE_MSG", "ONE")
+            subscribeToNotifications(characteristicForStackingStepsTakenNotify!!, connectedGatt!!)
+            Log.d("UPDATE_MSG", "TWO")
             subscribeToNotifications(characteristicForMotorPositionNotify!!, connectedGatt!!)
-            // subscribeToNotifications(characteristicForStackingStepsTakenNotify!!, connectedGatt!!)
-
+            Log.d("UPDATE_MSG", "THREE")
             lifecycleState = BLELifecycleState.Connected
 
             updateBluetoothToggleState()
@@ -575,6 +623,15 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Log.d("MSG", "onCharacteristicRead unknown uuid $characteristic.uuid")
             }
+        }
+
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt?,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
+        ) {
+            Log.d("onDescriptorWrite:", descriptor.uuid.toString() + " status:" + status)
         }
 
         override fun onCharacteristicChanged(
@@ -627,7 +684,6 @@ fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
         InsistUntilSuccess
     }
 
-    private var activityResultHandlers = mutableMapOf<Int, (Int) -> Unit>()
     private var permissionResultHandlers =
         mutableMapOf<Int, (Array<out String>, IntArray) -> Unit>()
     private var bleOnOffListener = object : BroadcastReceiver() {
@@ -635,7 +691,7 @@ fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
             when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF)) {
                 BluetoothAdapter.STATE_ON -> {
                     if (lifecycleState == BLELifecycleState.Disconnected) {
-                        bleRestartLifecycle()
+                        bleRestartLifecycle(false)
                     }
                 }
                 BluetoothAdapter.STATE_OFF -> {
@@ -645,15 +701,15 @@ fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
         }
     }
 
+    // Keep displaying "enable bluetooth" prompt
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        activityResultHandlers[requestCode]?.let { handler ->
-            handler(resultCode)
-        } ?: runOnUiThread {
-            Log.d(
-                "ERROR",
-                "onActivityResult requestCode=$requestCode result=$resultCode not handled"
-            )
+        when (requestCode) {
+            ENABLE_BLUETOOTH_REQUEST_CODE -> {
+                if (resultCode != Activity.RESULT_OK) {
+                    promptEnableBluetooth()
+                }
+            }
         }
     }
 
@@ -663,100 +719,54 @@ fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionResultHandlers[requestCode]?.let { handler ->
-            handler(permissions, grantResults)
-        } ?: runOnUiThread {
-            Log.d("ERROR", "onRequestPermissionsResult requestCode=$requestCode not handled")
-        }
-    }
-
-    private fun ensureBluetoothCanBeUsed(completion: (Boolean, String) -> Unit) {
-        enableBluetooth(AskType.AskOnce) { isEnabled ->
-            if (!isEnabled) {
-                completion(false, "Bluetooth OFF")
-                return@enableBluetooth
-            }
-
-            grantLocationPermission(AskType.AskOnce) { isGranted ->
-                if (!isGranted) {
-                    completion(false, "Location permission denied")
-                    return@grantLocationPermission
+        when (requestCode) {
+            LOCATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.firstOrNull() == PackageManager.PERMISSION_DENIED) {
+                    displaySnackbar("Failed to start scanning!", Snackbar.LENGTH_SHORT)
+                } else {
+                    // Permission granted; (re)start scan
+                    safeStartBleScan()
                 }
-
-                completion(true, "Bluetooth ON, ready for use")
             }
         }
     }
 
-    private fun enableBluetooth(askType: AskType, completion: (Boolean) -> Unit) {
-        if (bluetoothAdapter.isEnabled) {
-            completion(true)
-        } else {
-            val intentString = BluetoothAdapter.ACTION_REQUEST_ENABLE
-            val requestCode = ENABLE_BLUETOOTH_REQUEST_CODE
+/*
+private fun grantLocationPermission(askType: AskType, completion: (Boolean) -> Unit) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || isLocationPermissionGranted) {
+        completion(true)
+    } else {
+        runOnUiThread {
+            val requestCode = LOCATION_PERMISSION_REQUEST_CODE
+            val wantedPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
 
-            // set activity result handler
-            activityResultHandlers[requestCode] = { result ->
-                Unit
-                val isSuccess = result == Activity.RESULT_OK
+            // prepare motivation message
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Location permission required")
+            builder.setMessage("BLE advertising requires location access, starting from Android 6.0")
+            builder.setPositiveButton(android.R.string.ok) { _, _ ->
+                requestPermission(wantedPermission, requestCode)
+            }
+            builder.setCancelable(false)
+
+            // set permission result handler
+            permissionResultHandlers[requestCode] = { permissions, grantResults ->
+                val isSuccess = grantResults.firstOrNull() != PackageManager.PERMISSION_DENIED
                 if (isSuccess || askType != AskType.InsistUntilSuccess) {
-                    activityResultHandlers.remove(requestCode)
+                    permissionResultHandlers.remove(requestCode)
                     completion(isSuccess)
                 } else {
-                    // start activity for the request again
-                    startActivityForResult(Intent(intentString), requestCode)
+                    // show motivation message again
+                    builder.create().show()
                 }
             }
 
-            // start activity for the request
-            startActivityForResult(Intent(intentString), requestCode)
+            // show motivation message
+            builder.create().show()
         }
     }
-
-    private fun grantLocationPermission(askType: AskType, completion: (Boolean) -> Unit) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || isLocationPermissionGranted) {
-            completion(true)
-        } else {
-            runOnUiThread {
-                val requestCode = LOCATION_PERMISSION_REQUEST_CODE
-                val wantedPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
-
-                // prepare motivation message
-                val builder = AlertDialog.Builder(this)
-                builder.setTitle("Location permission required")
-                builder.setMessage("BLE advertising requires location access, starting from Android 6.0")
-                builder.setPositiveButton(android.R.string.ok) { _, _ ->
-                    requestPermission(wantedPermission, requestCode)
-                }
-                builder.setCancelable(false)
-
-                // set permission result handler
-                permissionResultHandlers[requestCode] = { permissions, grantResults ->
-                    val isSuccess = grantResults.firstOrNull() != PackageManager.PERMISSION_DENIED
-                    if (isSuccess || askType != AskType.InsistUntilSuccess) {
-                        permissionResultHandlers.remove(requestCode)
-                        completion(isSuccess)
-                    } else {
-                        // show motivation message again
-                        builder.create().show()
-                    }
-                }
-
-                // show motivation message
-                builder.create().show()
-            }
-        }
-    }
-
-    private val isLocationPermissionGranted
-        get() = hasPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-
-    private fun Context.hasPermission(permissionType: String): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            permissionType
-        ) == PackageManager.PERMISSION_GRANTED
-    }
+}
+*/
 
     private fun Activity.requestPermission(permission: String, requestCode: Int) {
         ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)

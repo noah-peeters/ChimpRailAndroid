@@ -24,7 +24,6 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
 
     // Process next action
     private fun nextAction() {
-        Log.d("BLE_QUEUE", "Start next action")
         if (bleQueue.isEmpty()) return
         val action: Action = bleQueue.element()
 
@@ -34,7 +33,6 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
                 success = mBluetoothGatt.writeDescriptor(
                     action.`object` as BluetoothGattDescriptor
                 )
-                Log.d("BLE_QUEUE", success.toString())
             }
             ActionType.WriteCharacteristic -> {
                 success = mBluetoothGatt.writeCharacteristic(
@@ -50,10 +48,12 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
         }
         if (success) {
             bleQueue.remove()
+            Log.d("BLE_QUEUE", "Success; removed from queue")
         } else {
             // TODO: add retry timeout
             // Retry executing task
             Thread.sleep(500)
+            Log.d("BLE_QUEUE", "Failed; retrying...")
             nextAction()
         }
     }
