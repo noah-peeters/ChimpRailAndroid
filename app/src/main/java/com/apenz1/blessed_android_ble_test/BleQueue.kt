@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
     inner class Action(val type: ActionType, val `object`: Any)
@@ -15,7 +16,7 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
         WriteDescriptor, ReadCharacteristic, WriteCharacteristic
     }
 
-    private val bleQueue: Queue<Action> = LinkedList()
+    private val bleQueue = ConcurrentLinkedQueue<Action>()
 
     //-- Private functions --//
 
@@ -74,9 +75,10 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
     }
 
     // Remove from queue callback
-    fun removeFromQueue(){
+    fun removeFromQueue() {
         bleQueue.remove()
     }
+
     fun onCharacteristicWrite(
         gatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?, status: Int

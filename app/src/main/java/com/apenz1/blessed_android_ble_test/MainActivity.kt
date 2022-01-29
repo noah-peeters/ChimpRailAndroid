@@ -469,10 +469,14 @@ fun onTapRead(view: View) {
         gatt: BluetoothGatt
     ) {
         // First allow notifications, then write to config descriptor
-        gatt.setCharacteristicNotification(characteristic, true)
-        val descriptor = characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
-        descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        bluetoothQueue.writeDescriptor(descriptor)
+        val success = gatt.setCharacteristicNotification(characteristic, true)
+        if (success) {
+            val descriptor = characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            bluetoothQueue.writeDescriptor(descriptor)
+        } else {
+            error("Unable to enable notifications")
+        }
     }
 
 
@@ -651,14 +655,17 @@ fun onTapRead(view: View) {
         }
     }
 
-    //region BluetoothGattCharacteristic extension
-    private fun BluetoothGattCharacteristic.isReadable(): Boolean =
-        containsProperty(BluetoothGattCharacteristic.PROPERTY_READ)
-
+    // Region BluetoothGattCharacteristic extension
     private fun BluetoothGattCharacteristic.isWriteable(): Boolean =
         containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE)
 
 /*
+fun BluetoothGattCharacteristic.isNotifiable(): Boolean =
+        containsProperty(BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+
+private fun BluetoothGattCharacteristic.isReadable(): Boolean =
+        containsProperty(BluetoothGattCharacteristic.PROPERTY_READ)
+
 fun BluetoothGattCharacteristic.isWriteableWithoutResponse(): Boolean =
     containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)
 
