@@ -10,11 +10,14 @@ import androidx.core.app.ActivityCompat
 import java.util.*
 
 class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
+    inner class Action(val type: ActionType, val `object`: Any)
     enum class ActionType {
         WriteDescriptor, ReadCharacteristic, WriteCharacteristic
     }
 
     private val bleQueue: Queue<Action> = LinkedList()
+
+    //-- Private functions --//
 
     private fun addAction(actionType: ActionType, `object`: Any) {
         bleQueue.add(Action(actionType, `object`))
@@ -46,10 +49,7 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
                 )
             }
         }
-        if (success) {
-            bleQueue.remove()
-            Log.d("BLE_QUEUE", "Success; removed from queue")
-        } else {
+        if (!success) {
             // TODO: add retry timeout
             // Retry executing task
             Thread.sleep(500)
@@ -58,34 +58,25 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
         }
     }
 
-    fun writeDescriptor(descriptor: BluetoothGattDescriptor) {
-        addAction(ActionType.WriteDescriptor, descriptor)
-    }
+    //-- Exposed functions --//
 
-    fun onDescriptorWrite(
-        gatt: BluetoothGatt?,
-        descriptor: BluetoothGattDescriptor?, status: Int
-    ) {
-        bleQueue.remove()
-        nextAction()
+    // Add to queue functions
+    fun writeCharacteristic(characteristic: BluetoothGattCharacteristic) {
+        addAction(ActionType.WriteCharacteristic, characteristic)
     }
 
     fun readCharacteristic(characteristic: BluetoothGattCharacteristic) {
         addAction(ActionType.ReadCharacteristic, characteristic)
     }
 
-    fun onCharacteristicRead(
-        gatt: BluetoothGatt?,
-        characteristic: BluetoothGattCharacteristic?, status: Int
-    ) {
+    fun writeDescriptor(descriptor: BluetoothGattDescriptor) {
+        addAction(ActionType.WriteDescriptor, descriptor)
+    }
+
+    // Remove from queue callback
+    fun removeFromQueue(){
         bleQueue.remove()
-        nextAction()
     }
-
-    fun writeCharacteristic(characteristic: BluetoothGattCharacteristic) {
-        addAction(ActionType.WriteCharacteristic, characteristic)
-    }
-
     fun onCharacteristicWrite(
         gatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?, status: Int
@@ -93,6 +84,4 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
         bleQueue.remove()
         nextAction()
     }
-
-    inner class Action(val type: ActionType, val `object`: Any)
 }

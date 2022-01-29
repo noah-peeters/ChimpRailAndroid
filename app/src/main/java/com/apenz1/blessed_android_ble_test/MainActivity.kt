@@ -606,32 +606,27 @@ fun onTapRead(view: View) {
             updateBluetoothToggleState()
         }
 
-        // TODO: Remove
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?, status: Int
+        ) {
+            bluetoothQueue.removeFromQueue()
+        }
+
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             status: Int
         ) {
-            if (characteristic.uuid == UUID.fromString(CHAR_FOR_READ_UUID)) {
-                val strValue = characteristic.value.toString(Charsets.UTF_8)
-                val log = "onCharacteristicRead " + when (status) {
-                    BluetoothGatt.GATT_SUCCESS -> "OK, value=\"$strValue\""
-                    BluetoothGatt.GATT_READ_NOT_PERMITTED -> "not allowed"
-                    else -> "error $status"
-                }
-                Log.d("MSG", log)
-            } else {
-                Log.d("MSG", "onCharacteristicRead unknown uuid $characteristic.uuid")
-            }
+            bluetoothQueue.removeFromQueue()
         }
-
 
         override fun onDescriptorWrite(
             gatt: BluetoothGatt?,
             descriptor: BluetoothGattDescriptor,
             status: Int
         ) {
-            Log.d("onDescriptorWrite:", descriptor.uuid.toString() + " status:" + status)
+            bluetoothQueue.removeFromQueue()
         }
 
         override fun onCharacteristicChanged(
