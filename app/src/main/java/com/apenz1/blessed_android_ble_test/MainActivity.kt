@@ -646,7 +646,6 @@ fun onTapRead(view: View) {
                 }
                 UUID.fromString(NOTIFY_STACKING_STEPS_TAKEN_UUID) -> {
                     val strValue = characteristic.value.toString(Charsets.UTF_8)
-                    Log.d("NOTIFY_STACKING_STEPS_TAKEN update:", strValue)
                     runOnUiThread {
                         sharedViewModel.setStackingProgressRawText(strValue)
                     }

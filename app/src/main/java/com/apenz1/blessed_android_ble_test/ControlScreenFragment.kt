@@ -1,6 +1,8 @@
 package com.apenz1.blessed_android_ble_test
 
+import android.animation.ObjectAnimator
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -58,19 +60,39 @@ class ControlScreenFragment : Fragment() {
     private fun setupStackingProgressLayout(view: View) {
         val stackingProgressLinearLayout =
             view.findViewById<LinearLayout>(R.id.stackingProgress_LinearLayout)
-        val stackingTotalDistanceTextView =
+        val totalDistance =
             view.findViewById<TextView>(R.id.stackingProgressTotalDistance_TextView)
         val progressBar = view.findViewById<ProgressBar>(R.id.stackingProgress_ProgressBar)
         val timeRemaining =
             view.findViewById<TextView>(R.id.stackingProgressTimeRemaining_TextView)
 
         stackingProgressLinearLayout.visibility = View.GONE
+        totalDistance.text = "Loading..."
+        timeRemaining.text = "Loading..."
+        progressBar.progress = 0
+
         sharedViewModel.stackingProgressRawText.observe(viewLifecycleOwner) { newValue ->
             if (newValue.isNotEmpty()) {
+                val valuesList = newValue.split(";")
+                val stepsSinceStart = valuesList.elementAt(0).toInt()
+                val totalStepsToTake = valuesList.elementAt(1).toInt()
+                val stepSize = valuesList.elementAt(2).toInt()
+                val timePerStep = valuesList.elementAt(3).toInt()
+
+                val totalDistance = totalStepsToTake * stepSize
+                val timeLeft = (totalStepsToTake - stepsSinceStart) * timePerStep
+
+                // Update progress with animation
+                ObjectAnimator.ofInt(progressBar, "progress", stepsSinceStart).start();
+                progressBar.max = totalStepsToTake
+
                 stackingProgressLinearLayout.visibility = View.VISIBLE
             } else {
                 // Stacking has stopped; hide layout
                 stackingProgressLinearLayout.visibility = View.GONE
+                totalDistance.text = "Loading..."
+                timeRemaining.text = "Loading..."
+                progressBar.progress = 0
             }
         }
 
