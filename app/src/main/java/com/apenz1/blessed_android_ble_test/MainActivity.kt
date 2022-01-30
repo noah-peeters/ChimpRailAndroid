@@ -219,11 +219,11 @@ class MainActivity : AppCompatActivity() {
             when (actionItem.id) {
                 R.id.fab_bluetooth_button -> {
                     // TODO: App crash when scan is running and user disables Bluetooth
-                    // Re-start scanning (might throw error if not yet registered)
+                    // Re-start scanning (catch "error" if not yet registered)
                     try {
                         unregisterReceiver(bleOnOffListener)
                     } catch (e: IllegalArgumentException) {
-                        e.printStackTrace()
+                        // e.printStackTrace()
                     }
                     val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
                     registerReceiver(bleOnOffListener, filter)

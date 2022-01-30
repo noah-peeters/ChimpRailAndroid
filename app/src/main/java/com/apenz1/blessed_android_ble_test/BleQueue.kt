@@ -77,6 +77,7 @@ class BleQueue(private val mBluetoothGatt: BluetoothGatt) {
     // Remove from queue callback
     fun removeFromQueue() {
         bleQueue.remove()
+        nextAction()
     }
 
     fun onCharacteristicWrite(
