@@ -209,7 +209,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Time remaining (HH:MM:SS):" />
+                        android:text="Time remaining (MM:SS):" />
 
                     <TextView
                         android:id="@+id/stackingProgressTimeRemaining_TextView"

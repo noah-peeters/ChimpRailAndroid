@@ -84,7 +84,9 @@ class ControlScreenFragment : Fragment() {
                 val timeLeftSeconds = (totalStepsToTake - stepsSinceStart) * timePerStep
 
                 // Update progress with animation
-                ObjectAnimator.ofInt(progressBar, "progress", stepsSinceStart).start();
+                ObjectAnimator.ofInt(progressBar, "progress", stepsSinceStart)
+                    .setDuration(800)
+                    .start();
                 progressBar.max = totalStepsToTake
                 totalDistance.text = totalDistInt.toString()
                 timeRemaining.text = DateUtils.formatElapsedTime(timeLeftSeconds.toLong())
