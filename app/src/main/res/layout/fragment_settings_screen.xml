@@ -9,7 +9,20 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginHorizontal="15dp"
         android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="15dp"
+            android:layout_weight="1"
+            android:text="General settings"
+            android:textColor="@color/design_default_color_on_primary"
+            android:textSize="25dp" />
+
+        <View style="@style/Divider" />
 
         <!-- Pre-shutter wait time -->
         <LinearLayout
@@ -160,6 +173,17 @@
                 android:text="Return to start position after finish" />
         </LinearLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="15dp"
+            android:layout_weight="1"
+            android:text="Operation mode settings"
+            android:textColor="@color/design_default_color_on_primary"
+            android:textSize="25dp" />
+
+        <View style="@style/Divider" />
         <!-- Operation mode RadioButtons -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -181,7 +205,7 @@
                 android:id="@+id/stackingOperationRadioButtonGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="0.75"
                 android:orientation="horizontal">
 
                 <RadioButton
@@ -212,7 +236,7 @@
             <!-- Start point -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
                 <TextView
@@ -249,7 +273,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Set end position" />
+                    android:paddingBottom="10dp"
+                    android:text="Set end position"
+                    android:textSize="15dp" />
 
             </LinearLayout>
         </LinearLayout>
@@ -264,7 +290,7 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Total distance travelled -->
+            <!-- Total distance travelled EditText layout -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -296,26 +322,25 @@
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
-            <!-- Movement direction -->
+            <!-- Movement direction RadioButtons layout -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginHorizontal="25dp"
                 android:layout_marginVertical="10dp"
                 android:gravity="center"
                 android:orientation="horizontal"
-                android:paddingBottom="60dp">
+                android:paddingBottom="30dp">
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:includeFontPadding="false"
                     android:text="Movement direction:"
                     android:textAlignment="viewStart" />
 
-                <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
-                    android:layout_width="match_parent"
+                <RadioGroup
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="horizontal">
