@@ -2,7 +2,7 @@ package com.apenz1.blessed_android_ble_test
 
 import android.animation.ObjectAnimator
 import android.os.Bundle
-import android.util.Log
+import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -13,6 +13,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+
 
 class ControlScreenFragment : Fragment() {
     private lateinit var forwardsButton: Button
@@ -79,12 +80,14 @@ class ControlScreenFragment : Fragment() {
                 val stepSize = valuesList.elementAt(2).toInt()
                 val timePerStep = valuesList.elementAt(3).toInt()
 
-                val totalDistance = totalStepsToTake * stepSize
-                val timeLeft = (totalStepsToTake - stepsSinceStart) * timePerStep
+                val totalDistInt = totalStepsToTake * stepSize
+                val timeLeftSeconds = (totalStepsToTake - stepsSinceStart) * timePerStep
 
                 // Update progress with animation
                 ObjectAnimator.ofInt(progressBar, "progress", stepsSinceStart).start();
                 progressBar.max = totalStepsToTake
+                totalDistance.text = totalDistInt.toString()
+                timeRemaining.text = DateUtils.formatElapsedTime(timeLeftSeconds.toLong())
 
                 stackingProgressLinearLayout.visibility = View.VISIBLE
             } else {
