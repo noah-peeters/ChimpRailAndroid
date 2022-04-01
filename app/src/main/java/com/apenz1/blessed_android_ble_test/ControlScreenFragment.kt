@@ -1,6 +1,8 @@
 package com.apenz1.blessed_android_ble_test
 
+import android.animation.ObjectAnimator
 import android.os.Bundle
+import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -11,6 +13,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+
 
 class ControlScreenFragment : Fragment() {
     private lateinit var forwardsButton: Button
@@ -58,19 +61,43 @@ class ControlScreenFragment : Fragment() {
     private fun setupStackingProgressLayout(view: View) {
         val stackingProgressLinearLayout =
             view.findViewById<LinearLayout>(R.id.stackingProgress_LinearLayout)
-        val stackingTotalDistanceTextView =
+        val totalDistance =
             view.findViewById<TextView>(R.id.stackingProgressTotalDistance_TextView)
         val progressBar = view.findViewById<ProgressBar>(R.id.stackingProgress_ProgressBar)
         val timeRemaining =
             view.findViewById<TextView>(R.id.stackingProgressTimeRemaining_TextView)
 
         stackingProgressLinearLayout.visibility = View.GONE
+        totalDistance.text = "Loading..."
+        timeRemaining.text = "Loading..."
+        progressBar.progress = 0
+
         sharedViewModel.stackingProgressRawText.observe(viewLifecycleOwner) { newValue ->
             if (newValue.isNotEmpty()) {
+                val valuesList = newValue.split(";")
+                val stepsSinceStart = valuesList.elementAt(0).toInt()
+                val totalStepsToTake = valuesList.elementAt(1).toInt()
+                val stepSize = valuesList.elementAt(2).toInt()
+                val timePerStep = valuesList.elementAt(3).toInt()
+
+                val totalDistInt = totalStepsToTake * stepSize
+                val timeLeftSeconds = (totalStepsToTake - stepsSinceStart) * timePerStep
+
+                // Update progress with animation
+                ObjectAnimator.ofInt(progressBar, "progress", stepsSinceStart)
+                    .setDuration(800)
+                    .start();
+                progressBar.max = totalStepsToTake
+                totalDistance.text = totalDistInt.toString()
+                timeRemaining.text = DateUtils.formatElapsedTime(timeLeftSeconds.toLong())
+
                 stackingProgressLinearLayout.visibility = View.VISIBLE
             } else {
                 // Stacking has stopped; hide layout
                 stackingProgressLinearLayout.visibility = View.GONE
+                totalDistance.text = "Loading..."
+                timeRemaining.text = "Loading..."
+                progressBar.progress = 0
             }
         }
 

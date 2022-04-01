@@ -9,13 +9,25 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="15dp"
         android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="15dp"
+            android:layout_weight="1"
+            android:text="General controls"
+            android:textColor="@color/design_default_color_on_primary"
+            android:textSize="25dp" />
+
+        <View style="@style/Divider" />
 
         <!-- Movement buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginHorizontal="15dp"
             android:layout_marginVertical="15dp"
             android:orientation="horizontal">
 
@@ -131,7 +143,6 @@
             android:id="@+id/stackingProgress_LinearLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginHorizontal="15dp"
             android:layout_marginVertical="15dp"
             android:gravity="center"
             android:orientation="vertical"
@@ -198,7 +209,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Time remaining (HH:MM:SS):" />
+                        android:text="Time remaining (MM:SS):" />
 
                     <TextView
                         android:id="@+id/stackingProgressTimeRemaining_TextView"
