@@ -45,6 +45,7 @@ private const val CHAR_FOR_READ_UUID = "f33dee97-d3d8-4fbd-8162-c980133f0c93"
 private const val STEP_MOVEMENT_WRITE_UUID = "908badf3-fd6b-4eec-b362-2810e97db94e"
 private const val START_STACKING_WRITE_UUID = "bed1dd25-79f2-4ce2-a6fa-000471efe3a0"
 private const val CONTINUOUS_MOVEMENT_WRITE_UUID = "28c74a57-67cb-4b43-8adf-8776c1dbc475"
+private const val TAKE_PICTURE_UUID = "74c3cf2a-a5ce-4ee3-9a31-6a997cfc89e3"
 private const val NOTIFY_CURRENT_MOTOR_POSITION_UUID = "d2f362f4-6542-4b13-be5e-8c81d423a347"
 private const val NOTIFY_STACKING_STEPS_TAKEN_UUID = "c14b46e2-553a-4664-98b0-653494882964"
 private const val CCC_DESCRIPTOR_UUID =
@@ -80,6 +81,7 @@ class MainActivity : AppCompatActivity() {
     private var characteristicForRead: BluetoothGattCharacteristic? = null
     var characteristicForStepMovementWrite: BluetoothGattCharacteristic? = null
     var characteristicForContinuousMovementWrite: BluetoothGattCharacteristic? = null
+    var characteristicForTakePictureWrite: BluetoothGattCharacteristic? = null
     var characteristicForStackingStartWrite: BluetoothGattCharacteristic? = null
     var characteristicForMotorPositionNotify: BluetoothGattCharacteristic? = null
     var characteristicForStackingStepsTakenNotify: BluetoothGattCharacteristic? = null
@@ -171,12 +173,11 @@ class MainActivity : AppCompatActivity() {
                 characteristicForContinuousMovementWrite
             )
         }
-        // Shutter release
-        // TODO: Implement
+        // Shutter release (sends "true")
         sharedViewModel.shutterCommand.observe(this) { newCommand ->
             writeMessageToPeripheral(
                 newCommand.toString(),
-                characteristicForContinuousMovementWrite
+                characteristicForTakePictureWrite
             )
         }
         // Stop stacking
@@ -402,6 +403,7 @@ fun onTapRead(view: View) {
         characteristicForStepMovementWrite = null
         characteristicForContinuousMovementWrite = null
         characteristicForStackingStartWrite = null
+        characteristicForTakePictureWrite = null
         characteristicForMotorPositionNotify = null
         characteristicForStackingStepsTakenNotify = null
 
@@ -579,6 +581,8 @@ fun onTapRead(view: View) {
                 service.getCharacteristic(UUID.fromString(STEP_MOVEMENT_WRITE_UUID))
             characteristicForContinuousMovementWrite =
                 service.getCharacteristic(UUID.fromString(CONTINUOUS_MOVEMENT_WRITE_UUID))
+            characteristicForTakePictureWrite =
+                service.getCharacteristic(UUID.fromString(TAKE_PICTURE_UUID))
             characteristicForStackingStartWrite =
                 service.getCharacteristic(UUID.fromString(START_STACKING_WRITE_UUID))
             characteristicForMotorPositionNotify =
