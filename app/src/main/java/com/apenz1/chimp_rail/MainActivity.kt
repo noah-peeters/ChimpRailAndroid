@@ -1,8 +1,7 @@
-package com.apenz1.blessed_android_ble_test
+package com.apenz1.chimp_rail
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
@@ -25,6 +24,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.apenz1.chimp_rail.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -93,48 +93,26 @@ class MainActivity : AppCompatActivity() {
         snackBar.setAction("DISMISS") {
             snackBar.dismiss()
         }
-        snackBar.anchorView = speedDialView // Display above FAB
         snackBar.show()
     }
 
-    //-- Permission utility functions --//
-    private fun promptEnableBluetooth() {
-        if (!bluetoothAdapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, ENABLE_BLUETOOTH_REQUEST_CODE)
-        }
-    }
-
-    private fun requestLocationPermission() {
-        if (isLocationPermissionGranted) {
-            return
-        }
-        runOnUiThread {
-            val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
-            alertDialog.setTitle("Location permission required")
-            alertDialog.setMessage("Location access is needed to scan for BLE devices.")
-            alertDialog.setPositiveButton("Ok") { _, _ ->
-                requestPermission(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    LOCATION_PERMISSION_REQUEST_CODE
-                )
+    // Ask for Bluetooth scan permission if not already granted, and return true if permission is granted, false otherwise
+    private fun promptEnableBluetooth(): Boolean {
+        // Check if permission not yet given
+        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_DENIED)
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            {
+                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.BLUETOOTH_SCAN), 2)
             }
-            alertDialog.setNegativeButton("Cancel") { _, _ ->
-                displaySnackbar("Failed to start scanning!", Snackbar.LENGTH_SHORT)
-            }
-            val alert: AlertDialog = alertDialog.create()
-            alert.setCanceledOnTouchOutside(false)
-            alert.show()
-
         }
-    }
 
-    private val isLocationPermissionGranted
-        get() = hasPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-
-    fun Context.hasPermission(permissionType: String): Boolean {
-        return ContextCompat.checkSelfPermission(this, permissionType) ==
-                PackageManager.PERMISSION_GRANTED
+        // Return true if permission was granted
+        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED)
+        {
+            return true
+        }
+        return false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -281,7 +259,6 @@ class MainActivity : AppCompatActivity() {
             // Close the SpeedDial (with animation)
             speedDialView.close()
             return@OnActionSelectedListener true
-            false
         })
     }
 
@@ -342,24 +319,6 @@ class MainActivity : AppCompatActivity() {
         bleEndLifecycle()
         super.onDestroy()
     }
-
-/*
-fun onTapRead(view: View) {
-    var gatt = connectedGatt ?: run {
-        displaySnackbar("No device connected!", Snackbar.LENGTH_SHORT)
-        return
-    }
-    var characteristic = characteristicForRead ?: run {
-        Log.d("ERROR", "read failed, characteristic unavailable $CHAR_FOR_READ_UUID")
-        return
-    }
-    if (!characteristic.isReadable()) {
-        Log.d("ERROR", "read failed, characteristic not readable $CHAR_FOR_READ_UUID")
-        return
-    }
-    gatt.readCharacteristic(characteristic)
-}
-*/
 
     // Send a message to the peripheral
     private fun writeMessageToPeripheral(
@@ -425,14 +384,15 @@ fun onTapRead(view: View) {
         }
     }
 
+    // Ask for BLE scanning permission and start scan (if permission granted)
     private fun safeStartBleScan() {
         if (isScanning) {
             return
         }
-        if (!isLocationPermissionGranted) {
-            // Permission (only needed for scanning)
-            requestLocationPermission()
-            return
+
+        val permissionGranted = promptEnableBluetooth()
+        if (!permissionGranted){
+            return // Bluetooth permission not granted, so don't scan (app would crash otherwise)
         }
 
         // Proceed to scan
@@ -734,46 +694,5 @@ fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
                 }
             }
         }
-    }
-
-/*
-private fun grantLocationPermission(askType: AskType, completion: (Boolean) -> Unit) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || isLocationPermissionGranted) {
-        completion(true)
-    } else {
-        runOnUiThread {
-            val requestCode = LOCATION_PERMISSION_REQUEST_CODE
-            val wantedPermission = android.Manifest.permission.ACCESS_FINE_LOCATION
-
-            // prepare motivation message
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle("Location permission required")
-            builder.setMessage("BLE advertising requires location access, starting from Android 6.0")
-            builder.setPositiveButton(android.R.string.ok) { _, _ ->
-                requestPermission(wantedPermission, requestCode)
-            }
-            builder.setCancelable(false)
-
-            // set permission result handler
-            permissionResultHandlers[requestCode] = { permissions, grantResults ->
-                val isSuccess = grantResults.firstOrNull() != PackageManager.PERMISSION_DENIED
-                if (isSuccess || askType != AskType.InsistUntilSuccess) {
-                    permissionResultHandlers.remove(requestCode)
-                    completion(isSuccess)
-                } else {
-                    // show motivation message again
-                    builder.create().show()
-                }
-            }
-
-            // show motivation message
-            builder.create().show()
-        }
-    }
-}
-*/
-
-    private fun Activity.requestPermission(permission: String, requestCode: Int) {
-        ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
     }
 }

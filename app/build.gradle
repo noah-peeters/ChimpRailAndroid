@@ -7,7 +7,7 @@ android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "com.apenz1.blessed_android_ble_test"
+        applicationId "com.apenz1.chimp_rail"
         minSdk 23
         targetSdk 31
         versionCode 1
@@ -32,7 +32,6 @@ android {
 }
 
 dependencies {
-
     // Suppress: "Unresolved reference: activityViewModels" error
     implementation "androidx.lifecycle:lifecycle-extensions:2.0.0"
     implementation 'androidx.fragment:fragment-ktx:1.4.0'

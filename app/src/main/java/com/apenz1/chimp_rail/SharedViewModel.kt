@@ -1,4 +1,4 @@
-package com.apenz1.blessed_android_ble_test
+package com.apenz1.chimp_rail
 
 import android.util.Log
 import androidx.lifecycle.LiveData
