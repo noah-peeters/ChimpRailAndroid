@@ -1,7 +1,6 @@
 package com.apenz1.chimp_rail
 
 import android.Manifest
-import android.app.Activity
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
@@ -35,10 +34,6 @@ import com.leinardi.android.speeddial.SpeedDialView
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.ceil
-
-
-private const val ENABLE_BLUETOOTH_REQUEST_CODE = 1
-private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 
 private const val SERVICE_UUID = "a7f8fe1b-a57d-46a3-a0da-947a1d8c59ce"
 private const val CHAR_FOR_READ_UUID = "f33dee97-d3d8-4fbd-8162-c980133f0c93"
@@ -96,20 +91,43 @@ class MainActivity : AppCompatActivity() {
         snackBar.show()
     }
 
-    // Ask for Bluetooth scan permission if not already granted, and return true if permission is granted, false otherwise
+    // Ask for bluetooth scan and connect permissions if not already granted, and return true if permission is granted, false otherwise
     private fun promptEnableBluetooth(): Boolean {
-        // Check if permission not yet given
-        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_DENIED)
-        {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            {
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.BLUETOOTH_SCAN), 2)
-            }
+        // Ask for bluetooth scanning permission
+        if (ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            ActivityCompat.requestPermissions(
+                this@MainActivity,
+                arrayOf(Manifest.permission.BLUETOOTH_SCAN),
+                2
+            )
+        }
+        // Ask for bluetooth connect permission
+        if (ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            ActivityCompat.requestPermissions(
+                this@MainActivity,
+                arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                2
+            )
         }
 
-        // Return true if permission was granted
-        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED)
-        {
+        // Return true if both permissions granted
+        if (ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) == PackageManager.PERMISSION_GRANTED
+            && ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             return true
         }
         return false
@@ -170,13 +188,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (!bluetoothAdapter.isEnabled) {
-            promptEnableBluetooth()
+            safeStartBleScan()
         }
     }
 
     // SpeedDial setup (always on top button)
     private fun setupSpeedDial() {
-        speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
+        speedDialView = findViewById(R.id.speedDial)
         speedDialView.addActionItem(
             SpeedDialActionItem.Builder(
                 R.id.fab_start_stacking_button,
@@ -325,10 +343,6 @@ class MainActivity : AppCompatActivity() {
         msg: String,
         characteristic: BluetoothGattCharacteristic?
     ) {
-        var gatt = connectedGatt ?: run {
-            displaySnackbar("Device not connected!", Snackbar.LENGTH_SHORT)
-            return
-        }
         if (characteristic == null) {
             displaySnackbar(
                 "write failed, characteristic unavailable.",
@@ -391,9 +405,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         val permissionGranted = promptEnableBluetooth()
-        if (!permissionGranted){
+
+        if (!permissionGranted) {
             return // Bluetooth permission not granted, so don't scan (app would crash otherwise)
         }
+        displaySnackbar("Starting scan!", Snackbar.LENGTH_SHORT)
 
         // Proceed to scan
         val serviceFilter = scanFilter.serviceUuid?.uuid.toString()
@@ -438,19 +454,6 @@ class MainActivity : AppCompatActivity() {
             bluetoothQueue.writeDescriptor(descriptor)
         } else {
             error("Unable to enable notifications")
-        }
-    }
-
-
-    private fun unsubscribeFromCharacteristic(characteristic: BluetoothGattCharacteristic) {
-        val gatt = connectedGatt ?: return
-        characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))?.let { cccDescriptor ->
-            if (!gatt.setCharacteristicNotification(characteristic, false)) {
-                Log.d("ERROR", "setNotification(false) failed for ${characteristic.uuid}")
-                return
-            }
-            cccDescriptor.value = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
-            gatt.writeDescriptor(cccDescriptor)
         }
     }
 
@@ -622,35 +625,10 @@ class MainActivity : AppCompatActivity() {
     private fun BluetoothGattCharacteristic.isWriteable(): Boolean =
         containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE)
 
-/*
-fun BluetoothGattCharacteristic.isNotifiable(): Boolean =
-        containsProperty(BluetoothGattCharacteristic.PROPERTY_NOTIFY)
-
-private fun BluetoothGattCharacteristic.isReadable(): Boolean =
-        containsProperty(BluetoothGattCharacteristic.PROPERTY_READ)
-
-fun BluetoothGattCharacteristic.isWriteableWithoutResponse(): Boolean =
-    containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)
-
-fun BluetoothGattCharacteristic.isNotifiable(): Boolean =
-    containsProperty(BluetoothGattCharacteristic.PROPERTY_NOTIFY)
-
-fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
-    containsProperty(BluetoothGattCharacteristic.PROPERTY_INDICATE)
-*/
-
     private fun BluetoothGattCharacteristic.containsProperty(property: Int): Boolean {
         return (properties and property) != 0
     }
 
-    //region Permissions and Settings management
-    enum class AskType {
-        AskOnce,
-        InsistUntilSuccess
-    }
-
-    private var permissionResultHandlers =
-        mutableMapOf<Int, (Array<out String>, IntArray) -> Unit>()
     private var bleOnOffListener = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF)) {
@@ -661,36 +639,6 @@ fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
                 }
                 BluetoothAdapter.STATE_OFF -> {
                     bleEndLifecycle()
-                }
-            }
-        }
-    }
-
-    // Keep displaying "enable bluetooth" prompt
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            ENABLE_BLUETOOTH_REQUEST_CODE -> {
-                if (resultCode != Activity.RESULT_OK) {
-                    promptEnableBluetooth()
-                }
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            LOCATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.firstOrNull() == PackageManager.PERMISSION_DENIED) {
-                    displaySnackbar("Failed to start scanning!", Snackbar.LENGTH_SHORT)
-                } else {
-                    // Permission granted; (re)start scan
-                    safeStartBleScan()
                 }
             }
         }

@@ -6,13 +6,12 @@
     <!-- Request legacy Bluetooth permissions on older devices. -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- Include "neverForLocation" only if you can strongly assert that
          your app never derives physical location from Bluetooth scan results. -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
-    <!-- Needed only if your app communicates with already-paired Bluetooth
-           devices. -->
     <!-- TODO: Check if needed?? -->
     <!--<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /> -->
     <!--bibo01 : hardware option-->
